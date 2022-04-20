@@ -1,0 +1,29 @@
+{
+    "name": "APTN downloaded marker",
+    "version": "1.0.0",
+    "description": "mark downloaded clip on APTN NewsRoom",
+    "manifest_version": 3,
+    "permissions" : [
+        "tabs",
+        "declarativeContent",
+        "contextMenus",
+        "downloads",
+        "webRequest",
+        "storage",
+        "webNavigation"
+    ],
+    "host_permissions": [
+         "<all_urls>"
+    ],
+    "background" : {
+        "service_worker" : "background.js"
+    },
+    "content_scripts": [
+        {
+          "matches": ["https://newsroom.ap.org/*"],
+          "run_at": "document_idle",
+          "js": ["content.js"]
+        }
+    ],
+    "options_page": "options.html"
+  }
