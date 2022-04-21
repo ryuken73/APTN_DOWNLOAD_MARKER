@@ -20,6 +20,7 @@ const sendMessage = options => {
 }
 
 // const APTN_CLIP_REGEXP = /(^\d{3,10})_/;
+// to cope with cctv1231233 like id
 const APTN_CLIP_REGEXP = /^([0-9a-zA-Z]{3,10})_/;
 const DEFAULT_ID = '999999';
 const getDownloadedList = queryOptions => {
@@ -29,6 +30,7 @@ const getDownloadedList = queryOptions => {
         });
     })
 };
+
 const extractShortName = downloadItems => {
     console.log(downloadItems);
     const mp4FileNamesFull = downloadItems.map(item => item.filename);
@@ -37,9 +39,11 @@ const extractShortName = downloadItems => {
     })
     return Promise.resolve({mp4FileNamesShort, downloadItems})
 }
+
 const isAPTNClip = fname => {
     return APTN_CLIP_REGEXP.test(fname);    
 }
+
 const extractAPTNId = ({mp4FileNamesShort, downloadItems}) => {
     const APTNClips = mp4FileNamesShort.filter(fname => isAPTNClip(fname));
     const clipIds = APTNClips.map(clipname => {
@@ -96,8 +100,6 @@ const refreshContextMenu = () => {
     })
 }
 
-
-
 chrome.contextMenus.onClicked.addListener(onClickHandlerContext);
 
 console.log('background outer start!');
@@ -122,10 +124,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     console.log('tab connected')
     chrome.webRequest.onCompleted.addListener(
         () => {
-            console.log('http reqeusted')
             debouncedRefreshMark();
         },
-        {urls: ["<all_urls>"]},
+        {urls: [URL_PATTERN]},
     )
    if(changeInfo.status === 'complete' && tab.url){
        const targetUrl = URL_PATTERN.replace('*','');
