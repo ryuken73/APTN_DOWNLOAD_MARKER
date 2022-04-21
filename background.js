@@ -75,12 +75,13 @@ function debounce(callback, limit = 100) {
     return function(...args) {
         clearTimeout(timeout)
         timeout = setTimeout(() => {
+            console.log('debounced callback called(sendMessage)');
             callback.apply(this, args)
         }, limit)
     }
 }
 
-const debouncedRefreshMark = debounce(refreshMark, 1000);
+const debouncedRefreshMark = debounce(refreshMark, 500);
 
 const onClickHandlerContext  = async (info, tab) => {
     console.log(info, tab)
@@ -126,7 +127,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         () => {
             debouncedRefreshMark();
         },
-        {urls: [URL_PATTERN]},
+        {urls: ['<all_urls>']},
     )
    if(changeInfo.status === 'complete' && tab.url){
        const targetUrl = URL_PATTERN.replace('*','');
