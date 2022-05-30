@@ -81,7 +81,7 @@ function debounce(callback, limit = 100) {
     }
 }
 
-const debouncedRefreshMark = debounce(refreshMark, 500);
+const debouncedRefreshMark = debounce(refreshMark, 200);
 
 const onClickHandlerContext  = async (info, tab) => {
     console.log(info, tab)
