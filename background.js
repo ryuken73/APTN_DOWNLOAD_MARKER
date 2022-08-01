@@ -1,8 +1,16 @@
 const URL_PATTERN = 'https://newsroom.ap.org/*';
 const PARENT_CONTEXT_ID = 'markDownloadedParent';
-const MEDIA_FILE_QUERY_OPTIONS = {
+
+// filenameRegex not support orring like '.*\.mp4$||.*\.mpg$'
+// use separate options for mp4 and mpg.
+const MP4_MEDIA_FILE_QUERY_OPTIONS = {
     mime: 'video/mp4',
-    filenameRegex: '.*\.mp4$',
+    filenameRegex: ".*\.mp4$",
+    state: 'complete'
+}
+const MPG_MEDIA_FILE_QUERY_OPTIONS = {
+    mime: 'video/mpeg',
+    filenameRegex: ".*\.mpg$",
     state: 'complete'
 }
 const MESSAGE_TO_MARK = 'markClipId'
@@ -23,16 +31,25 @@ const sendMessage = options => {
 // to cope with cctv1231233 like id
 const APTN_CLIP_REGEXP = /^([0-9a-zA-Z]{3,10})_/;
 const DEFAULT_ID = '999999';
-const getDownloadedList = queryOptions => {
+const downloadSearch = options => {
     return new Promise((resolve, reject) => {
-        chrome.downloads.search(queryOptions,(downloadItems) => {
+        chrome.downloads.search(options,(downloadItems) => {
             resolve(downloadItems);
         });
+    })
+}
+const getDownloadedList = queryOptions => {
+    return new Promise((resolve, reject) => {
+        const getListPromises = queryOptions.map(downloadSearch);
+        Promise.all(getListPromises)
+        .then(arrays => {
+            resolve(arrays.flat())
+        })
     })
 };
 
 const extractShortName = downloadItems => {
-    console.log(downloadItems);
+    // console.log(downloadItems);
     const mp4FileNamesFull = downloadItems.map(item => item.filename);
     const mp4FileNamesShort = mp4FileNamesFull.map(fullname => {
         return fullname.split('\\').pop();
@@ -51,12 +68,12 @@ const extractAPTNId = ({mp4FileNamesShort, downloadItems}) => {
         const clipId = result === null ? DEFAULT_ID : result[1];
         return clipId;
     })
-    console.log('in extractAPTNID:', downloadItems)
+    // console.log('in extractAPTNID:', downloadItems)
     return {clipIds, downloadItems};
 }
 
 const refreshMark = () => {
-    getDownloadedList(MEDIA_FILE_QUERY_OPTIONS)
+    getDownloadedList([MP4_MEDIA_FILE_QUERY_OPTIONS, MPG_MEDIA_FILE_QUERY_OPTIONS])
     .then(extractShortName)
     .then(extractAPTNId)
     .then(({clipIds, downloadItems}) => {
@@ -75,7 +92,7 @@ function debounce(callback, limit = 100) {
     return function(...args) {
         clearTimeout(timeout)
         timeout = setTimeout(() => {
-            console.log('debounced callback called(sendMessage)');
+            // console.log('debounced callback called(sendMessage)');
             callback.apply(this, args)
         }, limit)
     }
@@ -84,7 +101,7 @@ function debounce(callback, limit = 100) {
 const debouncedRefreshMark = debounce(refreshMark, 200);
 
 const onClickHandlerContext  = async (info, tab) => {
-    console.log(info, tab)
+    // console.log(info, tab)
     refreshMark();
 }
 
@@ -122,7 +139,7 @@ chrome.runtime.onInstalled.addListener(function() {
 
 // when any tab connects target, make context menus 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    console.log('tab connected')
+    // console.log('tab connected')
     chrome.webRequest.onCompleted.addListener(
         () => {
             debouncedRefreshMark();
@@ -137,7 +154,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.downloads.onChanged.addListener(
     function(downloadDelta){
-        console.log(downloadDelta);
+        // console.log(downloadDelta);
         if(downloadDelta.exists?.current === false){
             console.log('file deleted id=', downloadDelta.id);
             return;
