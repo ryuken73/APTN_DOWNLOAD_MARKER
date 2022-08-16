@@ -92,13 +92,13 @@ function debounce(callback, limit = 100) {
     return function(...args) {
         clearTimeout(timeout)
         timeout = setTimeout(() => {
-            // console.log('debounced callback called(sendMessage)');
+            console.log('debounced callback called(refresh marker)');
             callback.apply(this, args)
         }, limit)
     }
 }
 
-const debouncedRefreshMark = debounce(refreshMark, 200);
+const debouncedRefreshMark = debounce(refreshMark, 500);
 
 const onClickHandlerContext  = async (info, tab) => {
     // console.log(info, tab)
@@ -137,15 +137,31 @@ chrome.runtime.onInstalled.addListener(function() {
 
 });
 
+chrome.webRequest.onCompleted.addListener((details) => {
+        console.log('call refresh marker by web request!.', details)
+        const skipRegExp = /ts$|m3u8$/;
+        if(skipRegExp.test(details.url)){
+            console.log('do not refresh because web request is HLS request');
+            return
+        }
+        debouncedRefreshMark();
+    },
+    {urls: ['<all_urls>']},
+)
+
 // when any tab connects target, make context menus 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    // console.log('tab connected')
-    chrome.webRequest.onCompleted.addListener(
-        () => {
-            debouncedRefreshMark();
-        },
-        {urls: ['<all_urls>']},
-    )
+    chrome.webRequest.onCompleted.addListener((details) => {
+        console.log('call refresh marker by web request!.', details)
+        const skipRegExp = /ts$|m3u8$/;
+        if(skipRegExp.test(details.url)){
+            console.log('do not refresh because web request is HLS request');
+            return
+        }
+        debouncedRefreshMark();
+    },
+    {urls: ['<all_urls>']},
+)
    if(changeInfo.status === 'complete' && tab.url){
        const targetUrl = URL_PATTERN.replace('*','');
        tab.url.startsWith(targetUrl) && refreshContextMenu();
