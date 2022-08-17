@@ -73,6 +73,12 @@ const extractAPTNId = ({mp4FileNamesShort, downloadItems}) => {
 }
 
 const refreshMark = () => {
+    // limit query downloadItem by downloaed time, not works!
+    // but default count limit is 1000. think that's enough
+    // const fromTimestamp = Date.now() - 60000;
+    // MP4_MEDIA_FILE_QUERY_OPTIONS.endedAfter = fromTimestamp.toString();
+    // MPG_MEDIA_FILE_QUERY_OPTIONS.endedAfter = fromTimestamp.toString();
+
     getDownloadedList([MP4_MEDIA_FILE_QUERY_OPTIONS, MPG_MEDIA_FILE_QUERY_OPTIONS])
     .then(extractShortName)
     .then(extractAPTNId)
@@ -92,7 +98,7 @@ function debounce(callback, limit = 100) {
     return function(...args) {
         clearTimeout(timeout)
         timeout = setTimeout(() => {
-            console.log('debounced callback called(refresh marker)');
+            // console.log('debounced callback called(refresh marker)');
             callback.apply(this, args)
         }, limit)
     }
@@ -137,22 +143,10 @@ chrome.runtime.onInstalled.addListener(function() {
 
 });
 
-chrome.webRequest.onCompleted.addListener((details) => {
-        console.log('call refresh marker by web request!.', details)
-        const skipRegExp = /ts$|m3u8$/;
-        if(skipRegExp.test(details.url)){
-            console.log('do not refresh because web request is HLS request');
-            return
-        }
-        debouncedRefreshMark();
-    },
-    {urls: ['<all_urls>']},
-)
-
 // when any tab connects target, make context menus 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     chrome.webRequest.onCompleted.addListener((details) => {
-        console.log('call refresh marker by web request!.', details)
+        // console.log('call refresh marker by web request!.', details)
         const skipRegExp = /ts$|m3u8$/;
         if(skipRegExp.test(details.url)){
             console.log('do not refresh because web request is HLS request');
