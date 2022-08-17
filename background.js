@@ -143,8 +143,14 @@ chrome.runtime.onInstalled.addListener(function() {
 
 });
 
-// when any tab connects target, make context menus 
+// when any tab connects target, attach webRequest Listener
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    console.log(changeInfo, tab);
+    const captureRegExp = /http.*newsroom.*/;
+    if(changeInfo.status !== 'complete' || !(captureRegExp.test(tab.url))){
+        return;
+    }
+    console.log('attach webRequest complete listener!!')
     chrome.webRequest.onCompleted.addListener((details) => {
         // console.log('call refresh marker by web request!.', details)
         const skipRegExp = /ts$|m3u8$/;
@@ -153,13 +159,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             return
         }
         debouncedRefreshMark();
-    },
-    {urls: ['<all_urls>']},
-)
-   if(changeInfo.status === 'complete' && tab.url){
-       const targetUrl = URL_PATTERN.replace('*','');
-       tab.url.startsWith(targetUrl) && refreshContextMenu();
-   }
+    },{   
+        urls: ['<all_urls>']
+    });
+    // if(changeInfo.status === 'complete' && tab.url){
+    //    const targetUrl = URL_PATTERN.replace('*','');
+    //    tab.url.startsWith(targetUrl) && refreshContextMenu();
+    // }
 })
 
 chrome.downloads.onChanged.addListener(
