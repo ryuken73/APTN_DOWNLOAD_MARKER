@@ -16,11 +16,11 @@ const MPG_MEDIA_FILE_QUERY_OPTIONS = {
 const MESSAGE_TO_MARK = 'markClipId'
 
 const sendMessage = options => {
-    const {type, ids} = options;
+    const {type, ids, message} = options;
     // chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     chrome.tabs.query({url:[URL_PATTERN]}, function(tabs) {
         tabs.forEach(tab => {
-            chrome.tabs.sendMessage(tab.id, {type, ids}, function(response) {
+            chrome.tabs.sendMessage(tab.id, {type, ids, message}, function(response) {
                 console.log(response.farewell);
             });
         })
@@ -183,5 +183,9 @@ chrome.runtime.onMessage.addListener(
         console.log('receive refresh menu');
         refreshContextMenu();
         sendResponse({message: "refresh complete!"});
+      } 
+      if (request.type == "ping"){
+        console.log('received ping');
+        sendMessage({type:"alive", message: "pong"});
       }
 });

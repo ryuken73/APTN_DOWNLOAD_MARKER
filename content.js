@@ -53,9 +53,13 @@ const handleMarkClipId = (request, sender, sendResponse, element) => {
 }
 
 const markClipDebounced = debounce(handleMarkClipId, 500);
+const handleAliveMessage = (request) => {
+    console.log(request.message);
+}
 
 const handlers = {
-    'markClipId': markClipDebounced
+    'markClipId': markClipDebounced,
+    'alive': handleAliveMessage
 }
 const main = () => {
     console.log('dom ready! main start!');
@@ -82,6 +86,11 @@ const main = () => {
                 chrome.runtime.sendMessage({type:'refreshMenu'});
             }
             document.body.appendChild(injectElement);        
+            // prevent background service-worker becoming inactive status.
+            // (in inactive status, webRequest not captured)
+            setInterval(() => {
+                chrome.runtime.sendMessage({type:'ping'});
+            },5000)
         }
         initLoading()
     }
