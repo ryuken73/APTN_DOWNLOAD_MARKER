@@ -21,7 +21,8 @@ const sendMessage = options => {
     chrome.tabs.query({url:[URL_PATTERN]}, function(tabs) {
         tabs.forEach(tab => {
             chrome.tabs.sendMessage(tab.id, {type, ids, message}, function(response) {
-                console.log(response.farewell);
+                // console.log(response.farewell);
+                console.log(response);
             });
         })
     });
@@ -143,25 +144,29 @@ chrome.runtime.onInstalled.addListener(function() {
 
 });
 
+const fireRefresh = (details) => {
+    const NEWS_ROOM_URL = 'https://newsroom.ap.org';
+    const skipRegExp = /ts$|m3u8$/;
+    if(details.initiator !== NEWS_ROOM_URL){
+        // console.log('do not refresh because web request is not for ap newsroom');
+        return
+    }
+    if(skipRegExp.test(details.url)){
+        // console.log('do not refresh because web request is HLS request');
+        return
+    }
+    debouncedRefreshMark();
+}
+
 // when any tab connects target, attach webRequest Listener
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    console.log(changeInfo, tab);
+    // console.log(changeInfo, tab);
     const captureRegExp = /http.*newsroom.*/;
     if(changeInfo.status !== 'complete' || !(captureRegExp.test(tab.url))){
         return;
     }
     console.log('attach webRequest complete listener!!')
-    chrome.webRequest.onCompleted.addListener((details) => {
-        // console.log('call refresh marker by web request!.', details)
-        const skipRegExp = /ts$|m3u8$/;
-        if(skipRegExp.test(details.url)){
-            console.log('do not refresh because web request is HLS request');
-            return
-        }
-        debouncedRefreshMark();
-    },{   
-        urls: ['<all_urls>']
-    });
+    chrome.webRequest.onCompleted.addListener(fireRefresh ,{urls: ['<all_urls>']});
     // if(changeInfo.status === 'complete' && tab.url){
     //    const targetUrl = URL_PATTERN.replace('*','');
     //    tab.url.startsWith(targetUrl) && refreshContextMenu();
