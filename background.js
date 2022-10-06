@@ -6,12 +6,14 @@ const PARENT_CONTEXT_ID = 'markDownloadedParent';
 const MP4_MEDIA_FILE_QUERY_OPTIONS = {
     mime: 'video/mp4',
     filenameRegex: ".*\.mp4$",
-    state: 'complete'
+    state: 'complete',
+    orderBy: ['-endTime']
 }
 const MPG_MEDIA_FILE_QUERY_OPTIONS = {
     mime: 'video/mpeg',
     filenameRegex: ".*\.mpg$",
-    state: 'complete'
+    state: 'complete',
+    orderBy: ['-endTime']
 }
 const MESSAGE_TO_MARK = 'markClipId'
 
@@ -21,8 +23,13 @@ const sendMessage = options => {
     chrome.tabs.query({url:[URL_PATTERN]}, function(tabs) {
         tabs.forEach(tab => {
             chrome.tabs.sendMessage(tab.id, {type, ids, message}, function(response) {
-                // console.log(response.farewell);
-                console.log(response);
+                const error = chrome.runtime.lastError;
+                if(error){
+                    console.error(error)
+                    chrome.runtime.lastError = null;
+                } else {
+                    console.log(response);
+                }
             });
         })
     });

@@ -88,9 +88,29 @@ const main = () => {
             document.body.appendChild(injectElement);        
             // prevent background service-worker becoming inactive status.
             // (in inactive status, webRequest not captured)
-            setInterval(() => {
-                chrome.runtime.sendMessage({type:'ping'});
-            },5000)
+            const keepAlivePing = setInterval(() => {
+                chrome.runtime.sendMessage({type:'ping'}, (response) => {
+                    const error = chrome.runtime.lastError;
+                    if(error){
+                        console.error(error);
+                        console.log('Remove KeepAive ping?');
+                        chrome.runtime.lastError = null;
+                        // clearInterval(keepAlivePing)
+                    } else {
+                        console.log('response of ping = ',response);
+                    }
+                });
+            }, 5000)
+            chrome.runtime.onConnect.addListener(
+                function(port){
+                    console.log('in onConnect listener:', port);
+                    port.onDisconnect.addListener(function() {
+                        // clean up when content script gets disconnected
+                        console.log('clean up keepAlivePing');
+                        clearInterval(keepAlivePing);
+                    })
+                }
+            )
         }
         initLoading()
     }
